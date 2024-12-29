@@ -1,7 +1,7 @@
-use std::{fs, io, path::PathBuf};
+use std::{fs, io};
 
 pub struct Reader {
-    path: PathBuf,
+    path: String,
 }
 
 impl Reader {
@@ -10,7 +10,7 @@ impl Reader {
 
         if metadata.is_file() {
             return Ok(Self {
-                path: PathBuf::from(file_path),
+                path: String::from(file_path),
             });
         }
 
@@ -21,7 +21,7 @@ impl Reader {
         ))
     }
 
-    pub fn path(&self) -> &PathBuf {
+    pub fn path(&self) -> &str {
         &self.path
     }
 }
