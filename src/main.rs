@@ -1,5 +1,4 @@
 use std::io;
-
 use y3::{reader::Reader, tokenizer::Tokenizer};
 
 fn main() -> io::Result<()> {
