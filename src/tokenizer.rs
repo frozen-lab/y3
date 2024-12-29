@@ -1,13 +1,13 @@
 //!
-//! # Tokenizer
+//! # [Tokenizer]
 //!
 //! It provides a tokenizer for input files to generate [Token]'s for spell checking
 //!
-//! ## Working
+//! ## 🤝 Working
 //!
 //! It follows a multi-stage tokenization approach:
 //!
-//! ### Preprocessing
+//! ### 🚀 Preprocessing
 //!
 //! - Read the input_file line by line
 //! - Extract chunks by splitting on whitespaces
@@ -15,23 +15,23 @@
 //!   & end)
 //! - Ignore patterns like URLs, FilePath's, etc.
 //!
-//! ### Token Extraction
+//! ### 👷 [Token] Extraction
 //!
 //! - Deconstructs camelCase and PascalCase
 //! - Maintains contextual special characters (e.g. "sh🤬t" -> ["sh🤬t"])
 //! - Eliminates non-meaningful tokens (e.g. single letters, emojis, trailing or starting
 //!   symbols)
 //!
-//! ## Ignored Patterns
+//! ## 🤐 Ignored Patterns
 //!
-//! List of patterns which are ignored while tokenization
+//! List of [Patterns] which are ignored while tokenization
 //!
 //! - URL and file path
 //! - Regex pattern
 //! - Numeric content like phone numbers
 //! - Punctuation and symbol's like emojis
 //!
-//! ## Considerations
+//! ## 🤔 Considerations
 //!
 //! - Single-letter tokens are discarded
 //! - Standalone numeric strings are ignored
@@ -311,7 +311,7 @@ impl Tokenizer {
     ///
     /// Clear the list of parsed [Token]'s
     ///
-    /// ## NOTE
+    /// ## 👉 Notes
     ///
     /// It has no effect on the allocated memory for the [Vec].
     ///
@@ -411,16 +411,16 @@ impl Tokenizer {
     ///
     /// # Arguments
     ///
-    /// * `word` - A string slice representing the word to be split.
+    /// * `word` -> A string slice representing the word to be split.
     ///
     /// # Returns
     ///
-    /// * `Vec<String>` - A vector of `String` containing the individual word components split based
+    /// * `Vec<String>` -> A vector of `String` containing the individual word components split based
     /// on case transitions.
     ///
     /// e.g. "camelCaseExample", outputs -> `["camel", "Case", "Example"]`
     ///
-    /// # Notes
+    /// ## 👉 Notes
     ///
     /// - Consecutive uppercase letters (e.g., "TITLECase") are kept together
     /// - Words without case transitions (e.g., "simple") are returned as a
@@ -700,10 +700,10 @@ u m m lol!
     #[test]
     fn test_complex_urls() {
         let content = r#"
-(https://example.com/path#section)
-(https://example.com?q=lol&w=uio&x=%20)
-(https://example.com/path?q=lol%20wut)
-"#;
+        (https://example.com/path#section)
+        (https://example.com?q=lol&w=uio&x=%20)
+        (https://example.com/path?q=lol%20wut)
+        "#;
 
         let expected_tokens = vec![];
 
