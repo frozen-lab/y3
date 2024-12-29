@@ -11,3 +11,4 @@ path = "src/main.rs"
 name = "y3"
 
 [dependencies]
+regex = "1.11.1"

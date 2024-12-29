@@ -1,6 +1,6 @@
 use std::io;
 
-use y3::reader::Reader;
+use y3::{reader::Reader, tokenizer::Tokenizer};
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
@@ -11,11 +11,12 @@ fn main() -> io::Result<()> {
         return Ok(());
     }
 
-    let file_path = &args[1];
+    let reader = Reader::new(&args[1])?;
+    let mut tokenizer = Tokenizer::new();
 
-    let reader = Reader::new(file_path)?;
+    tokenizer.tokenize(reader.path())?;
 
-    println!("Path: {:?}", reader.path());
+    println!("Tokens: {}", tokenizer.tokens().len());
 
     Ok(())
 }
