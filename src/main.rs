@@ -1,5 +1,7 @@
 use std::io;
 
+use y3::reader::Reader;
+
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
@@ -11,7 +13,9 @@ fn main() -> io::Result<()> {
 
     let file_path = &args[1];
 
-    println!("Path: {file_path}");
+    let reader = Reader::new(file_path)?;
+
+    println!("Path: {:?}", reader.path());
 
     Ok(())
 }
