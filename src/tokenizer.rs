@@ -443,3 +443,338 @@ impl Tokenizer {
         result
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::{remove_file, File};
+    use std::io::Write;
+
+    // ------------------------------------------------
+    // ---------------- Util Functions ----------------
+    // ------------------------------------------------
+
+    fn create_temp_file(content: &str) -> String {
+        let file_path = format!("test_input_{}.txt", content.len());
+        let mut file = File::create(&file_path).expect("Failed to create test file");
+
+        file.write_all(content.as_bytes())
+            .expect("Failed to write to test file");
+
+        file_path
+    }
+
+    fn cleanup_temp_file(file_path: &str) {
+        remove_file(file_path).expect("Failed to delete test file");
+    }
+
+    fn run_test_case(file_content: &str, expected_tokens: Vec<Token>) {
+        let file_path = create_temp_file(file_content);
+
+        let mut tokenizer = Tokenizer::new();
+
+        tokenizer.tokenize(&file_path).unwrap();
+
+        cleanup_temp_file(&file_path);
+
+        assert_eq!(
+            tokenizer.tokens.len(),
+            expected_tokens.len(),
+            "Token count mismatch: expected {}, got {}",
+            expected_tokens.len(),
+            tokenizer.tokens.len()
+        );
+
+        for (i, token) in tokenizer.tokens.iter().enumerate() {
+            assert_eq!(
+                token.word, expected_tokens[i].word,
+                "Word mismatch at index {}: expected '{}', got '{}'",
+                i, expected_tokens[i].word, token.word
+            );
+            assert_eq!(
+                token.position.start, expected_tokens[i].position.start,
+                "Start position mismatch at index {}: expected {}, got {}",
+                i, expected_tokens[i].position.start, token.position.start
+            );
+            assert_eq!(
+                token.position.end, expected_tokens[i].position.end,
+                "End position mismatch at index {}: expected {}, got {}",
+                i, expected_tokens[i].position.end, token.position.end
+            );
+        }
+    }
+
+    // ------------------------------------------------------
+    // ---------------- [`split_word_cases`] ----------------
+    // ------------------------------------------------------
+
+    #[test]
+    fn test_split_word_cases() {
+        let word = "camelCaseExample";
+        let parts = Tokenizer::split_word_cases(word);
+        assert_eq!(parts, vec!["camel", "Case", "Example"]);
+
+        let word = "PascalCase";
+        let parts = Tokenizer::split_word_cases(word);
+        assert_eq!(parts, vec!["Pascal", "Case"]);
+
+        let word = "TITLECase";
+        let parts = Tokenizer::split_word_cases(word);
+        assert_eq!(parts, vec!["TITLECase"]);
+
+        let word = "simple";
+        let parts = Tokenizer::split_word_cases(word);
+        assert_eq!(parts, vec!["simple"]);
+    }
+
+    // -------------------------------------------
+    // ---------------- [Pattern] ----------------
+    // -------------------------------------------
+
+    #[test]
+    fn test_patterns() {
+        let patterns = Patterns::new();
+
+        assert!(patterns
+            .ignore_patterns
+            .iter()
+            .any(|re| re.is_match("https://example.com")));
+
+        assert!(patterns
+            .ignore_patterns
+            .iter()
+            .any(|re| re.is_match("C:\\path\\file.txt")));
+
+        assert!(patterns
+            .ignore_patterns
+            .iter()
+            .any(|re| re.is_match("12345")));
+
+        assert!(patterns
+            .ignore_patterns
+            .iter()
+            .any(|re| re.is_match("user@example.com")));
+
+        assert!(patterns.word_pattern.is_match("word123"));
+
+        assert!(patterns.word_pattern.is_match("example"));
+
+        let split: Vec<&str> = patterns.split_pattern.split("snake_case").collect();
+        assert_eq!(split, vec!["snake", "case"]);
+
+        let split: Vec<&str> = patterns.split_pattern.split("run—but").collect();
+        assert_eq!(split, vec!["run", "but"]);
+    }
+
+    // ---------------------------------------------
+    // ---------------- [Tokenizer] ----------------
+    // ---------------------------------------------
+
+    #[test]
+    fn test_tokenizer_basic() {
+        let content = "Hello, World! This is test of the tokenizer.";
+
+        let expected_tokens = vec![
+            Token {
+                word: "Hello".to_string(),
+                position: Position {
+                    start: 0,
+                    end: 4,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "World".to_string(),
+                position: Position {
+                    start: 6,
+                    end: 10,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "This".to_string(),
+                position: Position {
+                    start: 12,
+                    end: 15,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "is".to_string(),
+                position: Position {
+                    start: 17,
+                    end: 18,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "test".to_string(),
+                position: Position {
+                    start: 20,
+                    end: 23,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "of".to_string(),
+                position: Position {
+                    start: 25,
+                    end: 26,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "the".to_string(),
+                position: Position {
+                    start: 28,
+                    end: 30,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "tokenizer".to_string(),
+                position: Position {
+                    start: 32,
+                    end: 40,
+                    line_no: 1,
+                },
+            },
+        ];
+
+        run_test_case(content, expected_tokens);
+    }
+
+    #[test]
+    fn test_tokenizer_with_unicode() {
+        let content = r#"
+Rust 🦀 is a fast lang, 
+u m m lol!
+"#;
+
+        let expected_tokens = vec![
+            Token {
+                word: "Rust".to_string(),
+                position: Position {
+                    start: 0,
+                    end: 3,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "is".to_string(),
+                position: Position {
+                    start: 5,
+                    end: 6,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "fast".to_string(),
+                position: Position {
+                    start: 10,
+                    end: 13,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "lang".to_string(),
+                position: Position {
+                    start: 15,
+                    end: 18,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "lol".to_string(),
+                position: Position {
+                    start: 6,
+                    end: 8,
+                    line_no: 2,
+                },
+            },
+        ];
+
+        run_test_case(content, expected_tokens);
+    }
+
+    #[test]
+    fn test_complex_urls() {
+        let content = r#"
+(https://example.com/path#section)
+(https://example.com?q=lol&w=uio&x=%20)
+(https://example.com/path?q=lol%20wut)
+"#;
+
+        let expected_tokens = vec![];
+
+        run_test_case(content, expected_tokens);
+    }
+
+    #[test]
+    fn test_punctuation_surrounded_tokens() {
+        let content = r#"word (word)., "[word]""#;
+
+        let expected_tokens = vec![
+            Token {
+                word: "word".to_string(),
+                position: Position {
+                    start: 0,
+                    end: 3,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "word".to_string(),
+                position: Position {
+                    start: 5,
+                    end: 8,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "word".to_string(),
+                position: Position {
+                    start: 10,
+                    end: 13,
+                    line_no: 1,
+                },
+            },
+        ];
+
+        run_test_case(content, expected_tokens);
+    }
+
+    #[test]
+    fn test_punctuation_alphanumeric_tokens() {
+        let content = r#"abc123, 123abc, abc123def"#;
+
+        let expected_tokens = vec![
+            Token {
+                word: "abc123".to_string(),
+                position: Position {
+                    start: 0,
+                    end: 5,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "abc".to_string(),
+                position: Position {
+                    start: 10,
+                    end: 12,
+                    line_no: 1,
+                },
+            },
+            Token {
+                word: "abc123def".to_string(),
+                position: Position {
+                    start: 14,
+                    end: 22,
+                    line_no: 1,
+                },
+            },
+        ];
+
+        run_test_case(content, expected_tokens);
+    }
+}
