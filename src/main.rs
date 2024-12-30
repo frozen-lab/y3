@@ -1,5 +1,10 @@
 use std::io;
-use y3::{gpu::Gpu, ngram::NgramIndex, reader::Reader, tokenizer::Tokenizer};
+use y3::{
+    gpu::Gpu,
+    ngram::NgramIndex,
+    reader::Reader,
+    tokenizer::{Token, Tokenizer},
+};
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
@@ -15,14 +20,11 @@ fn main() -> io::Result<()> {
 
     tokenizer.tokenize(reader.path())?;
 
-    // Retrieve the list of tokens from the tokenizer
     let tokens = tokenizer.tokens();
     let gpu = Gpu::new().expect("Failed to load GPU module");
 
     for token in tokens {
         if let Some(candidates) = ngram.query_candidates(&token.word(), 2) {
-            println!("Word: {}", token.word());
-
             // Calculate edit distances using the GPU
             let distances = gpu
                 .calculate_edit_distances(&token.word(), &candidates)
@@ -37,20 +39,35 @@ fn main() -> io::Result<()> {
 
             candidate_pairs.sort_by_key(|&(_, distance)| distance);
 
-            // Retrieve the closest 3–5 candidates
+            // Get the closest candidates
             let closest_candidates: Vec<&String> = candidate_pairs
                 .into_iter()
                 .take(5)
                 .map(|(candidate, _)| candidate)
                 .collect();
 
-            println!("Closest candidates: {:?}", closest_candidates);
-        } else {
-            println!("Word: {} is already in the dictionary.", token.word());
+            print_warning(reader.path(), token, &closest_candidates);
         }
     }
 
     Ok(())
+}
+
+fn print_warning(file_path: &str, token: &Token, closest_candidates: &[&String]) {
+    println!(
+        "--> {file_path}:{}.{}\n   |\n{}  | {}\n   | {}\n   |\n   = suggestions: {:?}",
+        token.position().line_no(),
+        token.position().start(),
+        token.position().line_no(),
+        format!(
+            "{:width$}{}",
+            "",
+            &token.word(),
+            width = token.position().start()
+        ),
+        format!("{:width$}^", "", width = token.position().start()),
+        closest_candidates,
+    );
 }
 
 fn print_help() {
