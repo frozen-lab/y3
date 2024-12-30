@@ -20,7 +20,7 @@ impl NgramIndex {
         Ok(Self { index })
     }
 
-    pub fn query_candidates(&self, word: &str, n: usize) -> Option<HashSet<String>> {
+    pub fn query_candidates(&self, word: &str, n: usize) -> Option<Vec<String>> {
         let ngrams = Self::generate_ngrams(word, n);
         let mut candidates = HashSet::new();
 
@@ -33,7 +33,8 @@ impl NgramIndex {
         if candidates.contains(word) {
             None
         } else {
-            Some(candidates) // Return the candidate set for further processing
+            // Return the candidate set for further processing
+            Some(candidates.into_iter().collect())
         }
     }
 

@@ -7,6 +7,7 @@ const MAX_WORD_LENGTH: usize = 128;
 pub struct Gpu {
     module: Module,
     stream: Stream,
+    _context: Context,
 }
 
 impl Gpu {
@@ -14,17 +15,21 @@ impl Gpu {
         rustacuda::init(CudaFlags::empty())?;
 
         let device = Device::get_device(0)?;
-        let _ =
+        let context =
             Context::create_and_push(ContextFlags::MAP_HOST | ContextFlags::SCHED_AUTO, device)?;
 
         let ptx = CString::new(include_str!("../gpu/distance.ptx"))?;
         let module = Module::load_from_string(&ptx)?;
         let stream = Stream::new(StreamFlags::NON_BLOCKING, None)?;
 
-        Ok(Self { module, stream })
+        Ok(Self {
+            module,
+            stream,
+            _context: context,
+        })
     }
 
-    pub fn calculate_edit_distance(
+    pub fn calculate_edit_distances(
         &self,
         target_word: &str,
         word_list: &[String],
